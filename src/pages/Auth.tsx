@@ -22,7 +22,10 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
 
   useEffect(() => {
-    if (user) navigate("/dashboard/events", { replace: true });
+    if (user) {
+      const params = new URLSearchParams(window.location.search);
+      navigate(params.get("redirect") || "/account", { replace: true });
+    }
   }, [user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -37,7 +40,7 @@ const Auth = () => {
       toast.error(error.message);
     } else {
       toast.success("Welcome back!");
-      navigate("/dashboard/events");
+      navigate("/account");
     }
   };
 
@@ -56,8 +59,8 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Account created! Check your email to confirm, or you may be logged in automatically.");
-      navigate("/dashboard/events");
+      toast.success("Account created!");
+      navigate("/account");
     }
   };
 
@@ -85,7 +88,7 @@ const Auth = () => {
             <Logo size="lg" />
           </Link>
           <p className="text-muted-foreground mt-2 text-sm font-body">
-            Create events people actually want to attend
+            Personalized haircare, made for your hair.
           </p>
         </div>
 
