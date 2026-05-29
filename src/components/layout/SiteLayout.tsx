@@ -89,7 +89,7 @@ export function SiteLayout({ children }: { children: React.ReactNode }) {
       <footer className="border-t border-border/50 mt-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
           <Logo size="sm" />
-          <p>© {new Date().getFullYear()} lushlocks — beautiful hair, personalized.</p>
+          <p>© {new Date().getFullYear()} YouHair — beautiful hair, personalized.</p>
           <p className="flex items-center gap-1"><Sparkles className="w-3 h-3" /> AI-powered routines</p>
         </div>
       </footer>

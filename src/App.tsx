@@ -29,7 +29,7 @@ function ScrollToTop() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} storageKey="app-theme">
+    <ThemeProvider attribute="class" defaultTheme="dark" forcedTheme="dark" enableSystem={false} storageKey="app-theme">
       <AuthProvider>
         <CartProvider>
           <TooltipProvider>
@@ -43,7 +43,7 @@ const App = () => (
                 <Route path="/shop" element={<Shop />} />
                 <Route path="/shop/:slug" element={<ProductDetail />} />
                 <Route path="/cart" element={<Cart />} />
-                <Route path="/recommender" element={<Recommender />} />
+                <Route path="/recommender" element={<ProtectedRoute><Recommender /></ProtectedRoute>} />
                 <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                 <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
                 {/* Legacy redirects */}

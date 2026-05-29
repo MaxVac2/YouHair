@@ -19,6 +19,7 @@ export type Database = {
           concerns: string[]
           density: string | null
           hair_type: string | null
+          hair_color: string | null
           id: string
           notes: string | null
           scalp_type: string | null
@@ -31,6 +32,7 @@ export type Database = {
           concerns?: string[]
           density?: string | null
           hair_type?: string | null
+          hair_color?: string | null
           id?: string
           notes?: string | null
           scalp_type?: string | null
@@ -43,6 +45,7 @@ export type Database = {
           concerns?: string[]
           density?: string | null
           hair_type?: string | null
+          hair_color?: string | null
           id?: string
           notes?: string | null
           scalp_type?: string | null

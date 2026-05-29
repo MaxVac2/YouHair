@@ -4,11 +4,13 @@ import { SiteLayout } from "@/components/layout/SiteLayout";
 import { useProducts } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 
-const CATEGORIES = ["all", "shampoo", "conditioner", "mask", "oil", "serum", "leave-in", "treatment"];
-
 export default function Shop() {
   const { data: products = [], isLoading } = useProducts();
   const [cat, setCat] = useState<string>("all");
+  const categories = useMemo(() => {
+    const unique = Array.from(new Set(products.map((p) => p.category))).sort();
+    return ["all", ...unique];
+  }, [products]);
 
   const filtered = useMemo(
     () => (cat === "all" ? products : products.filter((p) => p.category === cat)),
@@ -24,7 +26,7 @@ export default function Shop() {
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 mb-10">
-          {CATEGORIES.map((c) => (
+          {categories.map((c) => (
             <Button
               key={c}
               size="sm"

@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { hairType, texture, thickness, density, scalpType, concerns = [], productNames = [] } = await req.json();
+    const { hairType, texture, thickness, density, scalpType, hairColor, concerns = [], productNames = [] } = await req.json();
     if (!hairType) {
       return new Response(JSON.stringify({ error: "hairType is required" }), {
         status: 400,
@@ -31,6 +31,7 @@ serve(async (req) => {
       thickness && `Thickness: ${thickness}`,
       density && `Density: ${density}`,
       scalpType && `Scalp: ${scalpType}`,
+      hairColor && `Hair color: ${hairColor}`,
       concerns.length && `Concerns: ${concerns.join(", ")}`,
       productNames.length && `Recommended products from our catalog: ${productNames.join(", ")}`,
     ].filter(Boolean).join("\n");
@@ -43,7 +44,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are a warm, expert haircare advisor for the lushlocks brand. Write a short personalized routine (3-5 sentences). Cover wash frequency, the key step type (cleanse, condition, mask, oil, leave-in) most important for them, and one styling tip. Be specific, friendly, and avoid medical claims. Reference the listed catalog products by name when it fits naturally. Plain text, no markdown headings.",
+            content: "You are a warm, expert haircare advisor for the YouHair brand. Write a short personalized routine (3-5 sentences). Cover wash frequency, the key step type (cleanse, condition, mask, oil, leave-in) most important for them, and one styling tip. Be specific, friendly, and avoid medical claims. Reference the listed catalog products by name when it fits naturally. If hair color is ranger, always include Hair Die in the routine. Plain text, no markdown headings.",
           },
           { role: "user", content: userInfo },
         ],

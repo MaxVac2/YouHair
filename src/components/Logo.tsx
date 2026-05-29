@@ -17,7 +17,7 @@ export function Logo({ size = "md", className = "" }: LogoProps) {
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
       <Sparkles className={`${s.icon} text-primary`} strokeWidth={2.4} />
       <span className={`font-display font-bold text-foreground tracking-tight ${s.text}`}>
-        lushlocks
+        YouHair
       </span>
     </span>
   );

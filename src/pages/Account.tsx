@@ -31,6 +31,7 @@ export default function Account() {
             <div className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
               {hair.hair_type && <div><span className="text-muted-foreground">Type: </span><span className="capitalize">{hair.hair_type}</span></div>}
               {hair.texture && <div><span className="text-muted-foreground">Texture: </span><span className="capitalize">{hair.texture}</span></div>}
+              {hair.hair_color && <div><span className="text-muted-foreground">Color: </span><span className="capitalize">{hair.hair_color}</span></div>}
               {hair.thickness && <div><span className="text-muted-foreground">Thickness: </span><span className="capitalize">{hair.thickness}</span></div>}
               {hair.density && <div><span className="text-muted-foreground">Density: </span><span className="capitalize">{hair.density}</span></div>}
               {hair.scalp_type && <div><span className="text-muted-foreground">Scalp: </span><span className="capitalize">{hair.scalp_type}</span></div>}
