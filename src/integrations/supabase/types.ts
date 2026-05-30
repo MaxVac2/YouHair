@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           concerns: string[]
           density: string | null
+          hair_color: string | null
           hair_type: string | null
           id: string
           notes: string | null
@@ -30,6 +31,7 @@ export type Database = {
         Insert: {
           concerns?: string[]
           density?: string | null
+          hair_color?: string | null
           hair_type?: string | null
           id?: string
           notes?: string | null
@@ -42,6 +44,7 @@ export type Database = {
         Update: {
           concerns?: string[]
           density?: string | null
+          hair_color?: string | null
           hair_type?: string | null
           id?: string
           notes?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.hair_profiles ADD COLUMN IF NOT EXISTS hair_color TEXT;
