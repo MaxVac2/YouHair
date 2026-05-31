@@ -49,6 +49,51 @@ export default function Account() {
           )}
         </section>
 
+        {/* Saved routine */}
+        {(() => {
+          const saved = (hair as any)?.saved_routine as
+            | {
+                products: { id: string; name: string; slug: string; price: number; image_url: string | null; category: string }[];
+                haircut: { title: string; detail: string };
+                haircutImage: string | null;
+              }
+            | null
+            | undefined;
+          if (!saved || !saved.products?.length) return null;
+          return (
+            <section className="bg-card p-6 rounded-3xl">
+              <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+                <h2 className="font-display text-xl font-bold">My saved routine</h2>
+                <Button asChild variant="outline" size="sm" className="rounded-full">
+                  <Link to="/recommender">Regenerate</Link>
+                </Button>
+              </div>
+              <div className="grid sm:grid-cols-[1fr_140px] gap-4 mb-5 items-start">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Haircut</p>
+                  <p className="font-display font-semibold mt-1">{saved.haircut?.title}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{saved.haircut?.detail}</p>
+                </div>
+                {saved.haircutImage && (
+                  <div className="aspect-square w-full rounded-2xl overflow-hidden bg-muted">
+                    <img src={saved.haircutImage} alt={saved.haircut?.title} className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+              <ol className="space-y-2">
+                {saved.products.map((p, i) => (
+                  <li key={p.id} className="flex items-center gap-3 bg-muted/50 rounded-2xl p-3">
+                    <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">{i + 1}</span>
+                    {p.image_url && <img src={p.image_url} alt={p.name} className="w-12 h-12 rounded-xl object-cover" />}
+                    <Link to={`/shop/${p.slug}`} className="flex-1 text-sm font-medium hover:text-primary">{p.name}</Link>
+                    <span className="text-sm">${Number(p.price).toFixed(2)}</span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          );
+        })()}
+
         {/* Orders */}
         <section>
           <h2 className="font-display text-xl font-bold mb-4">Order history</h2>
