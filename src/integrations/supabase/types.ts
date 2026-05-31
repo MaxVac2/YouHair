@@ -22,6 +22,7 @@ export type Database = {
           hair_type: string | null
           id: string
           notes: string | null
+          saved_routine: Json | null
           scalp_type: string | null
           texture: string | null
           thickness: string | null
@@ -35,6 +36,7 @@ export type Database = {
           hair_type?: string | null
           id?: string
           notes?: string | null
+          saved_routine?: Json | null
           scalp_type?: string | null
           texture?: string | null
           thickness?: string | null
@@ -48,6 +50,7 @@ export type Database = {
           hair_type?: string | null
           id?: string
           notes?: string | null
+          saved_routine?: Json | null
           scalp_type?: string | null
           texture?: string | null
           thickness?: string | null
