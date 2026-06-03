@@ -17,7 +17,7 @@ const TEXTURES = ["fine", "medium", "coarse"];
 const THICKNESS = ["thin", "medium", "thick"];
 const DENSITY = ["low", "medium", "high"];
 const SCALP = ["oily", "balanced", "dry"];
-const HAIR_COLORS = ["black", "brown", "blonde", "red", "ranger"];
+const HAIR_COLORS = ["black", "brown", "blonde", "ranger"];
 const CONCERNS = ["oily", "dry", "dandruff", "frizz", "damage", "color-treated", "scalp", "volume"];
 
 const STEP_COPY: Record<string, { title: string; description: string }> = {
@@ -77,6 +77,12 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
+interface RoutineStep {
+  product_id: string;
+  title: string;
+  description: string;
+}
+
 interface SnapshotRoutine {
   inputs: {
     hairType: string;
@@ -88,6 +94,7 @@ interface SnapshotRoutine {
     concerns: string[];
   };
   products: Pick<Product, "id" | "name" | "slug" | "price" | "image_url" | "category">[];
+  steps: RoutineStep[];
   haircut: { title: string; detail: string };
   haircutImage: string | null;
 }
@@ -166,6 +173,35 @@ export default function Recommender() {
       toast.error("Pick your hair type first");
       return;
     }
+
+    // Easter egg: ranger color short-circuits everything
+    if (hairColor === "ranger") {
+      const rangerSnapshot: SnapshotRoutine = {
+        inputs: { hairType, texture, thickness, density, scalpType, hairColor, concerns: [...concerns] },
+        products: [],
+        steps: [],
+        haircut: { title: "", detail: "" },
+        haircutImage: null,
+      };
+      setRoutine(rangerSnapshot);
+      if (user) {
+        try {
+          await saveProfile.mutateAsync({
+            hair_type: hairType || null,
+            hair_color: hairColor || null,
+            texture: texture || null,
+            thickness: thickness || null,
+            density: density || null,
+            scalp_type: scalpType || null,
+            concerns,
+            // @ts-ignore
+            saved_routine: rangerSnapshot,
+          });
+        } catch (e) { console.error(e); }
+      }
+      return;
+    }
+
     const matched = buildRecommendations();
     if (matched.length === 0) {
       toast.error("No matches yet — try adding a concern or different hair type.");
@@ -181,14 +217,7 @@ export default function Recommender() {
       category: p.category,
     }));
 
-    // Show routine immediately (without image) so UI is stable
-    const snapshot: SnapshotRoutine = {
-      inputs: { hairType, texture, thickness, density, scalpType, hairColor, concerns: [...concerns] },
-      products: slimProducts,
-      haircut,
-      haircutImage: null,
-    };
-    setRoutine(snapshot);
+    setRoutine(null);
     setLoadingTip(true);
 
     try {
@@ -203,10 +232,27 @@ export default function Recommender() {
           concerns,
           haircutTitle: haircut.title,
           haircutDetail: haircut.detail,
+          products: slimProducts.map((p) => ({ id: p.id, name: p.name, category: p.category, slug: p.slug })),
         },
       });
       if (error) throw error;
-      const finalSnapshot: SnapshotRoutine = { ...snapshot, haircutImage: data?.imageUrl ?? null };
+
+      const aiSteps: RoutineStep[] = Array.isArray(data?.steps) ? data.steps : [];
+      // Order steps to match product order; fall back to static copy if AI step missing
+      const orderedSteps: RoutineStep[] = slimProducts.map((p) => {
+        const found = aiSteps.find((s) => s.product_id === p.id);
+        if (found) return found;
+        const fallback = stepFor(p as Product);
+        return { product_id: p.id, title: fallback.title, description: fallback.description };
+      });
+
+      const finalSnapshot: SnapshotRoutine = {
+        inputs: { hairType, texture, thickness, density, scalpType, hairColor, concerns: [...concerns] },
+        products: slimProducts,
+        steps: orderedSteps,
+        haircut,
+        haircutImage: data?.imageUrl ?? null,
+      };
       setRoutine(finalSnapshot);
 
       if (user) {
@@ -225,11 +271,12 @@ export default function Recommender() {
       if (!data?.imageUrl) toast.error("Couldn't generate the haircut image, but your routine is ready.");
     } catch (err) {
       console.error(err);
-      toast.error("Couldn't generate the haircut image — your routine is still below.");
+      toast.error("Couldn't generate your routine. Please try again.");
     } finally {
       setLoadingTip(false);
     }
   };
+
 
   const handleAddToCart = (p: SnapshotRoutine["products"][number]) => {
     add({ id: p.id, name: p.name, price: Number(p.price), image_url: p.image_url ?? null });
@@ -303,7 +350,7 @@ export default function Recommender() {
 
       for (let i = 0; i < routine.products.length; i++) {
         const p = routine.products[i];
-        const step = stepFor(p as Product);
+        const step = routine.steps[i] ?? stepFor(p as Product);
         if (y > pageH - 100) { pdf.addPage(); y = margin; }
 
         // image box
@@ -402,7 +449,15 @@ export default function Recommender() {
           )}
         </div>
 
-        {routine && (
+        {routine && routine.inputs.hairColor === "ranger" && (
+          <div className="mt-8 bg-card p-10 rounded-3xl border-4 border-primary text-center">
+            <h2 className="font-display text-4xl sm:text-5xl font-extrabold tracking-[-0.02em] text-primary">
+              GET CHEMOTHERAPY
+            </h2>
+          </div>
+        )}
+
+        {routine && routine.inputs.hairColor !== "ranger" && (
           <div className="mt-8 space-y-6">
             <div className="bg-card p-6 rounded-3xl space-y-5">
               <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -418,7 +473,7 @@ export default function Recommender() {
 
               <div className="grid gap-3">
                 {routine.products.map((p, i) => {
-                  const step = stepFor(p as Product);
+                  const step = routine.steps[i] ?? { title: "", description: "" };
                   return (
                     <div key={p.id} className="flex items-start gap-4 bg-muted/50 rounded-2xl p-4">
                       <div className="w-9 h-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
