@@ -476,7 +476,7 @@ export default function Recommender() {
 
               <div className="grid gap-3">
                 {routine.products.map((p, i) => {
-                  const step = routine.steps[i] ?? { title: "", description: "" };
+                  const step = routine.steps[i] ?? { title: "", description: "", justification: "" };
                   return (
                     <div key={p.id} className="flex items-start gap-4 bg-muted/50 rounded-2xl p-4">
                       <div className="w-9 h-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
@@ -486,11 +486,18 @@ export default function Recommender() {
                         {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />}
                       </Link>
                       <div className="flex-1 min-w-0">
-                        <p className="font-display font-semibold">{step.title}</p>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <Link to={`/shop/${p.slug}`} className="font-display font-semibold hover:text-primary transition-colors">{p.name}</Link>
+                          {step.title && <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">· {step.title}</span>}
+                        </div>
                         <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+                        {step.justification && (
+                          <p className="text-sm mt-2 text-foreground/80 bg-primary/5 border border-primary/15 rounded-xl px-3 py-2">
+                            <span className="font-medium text-primary">Why this for you: </span>{step.justification}
+                          </p>
+                        )}
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <Link to={`/shop/${p.slug}`} className="text-sm font-medium hover:text-primary transition-colors">{p.name}</Link>
-                          <span className="text-xs text-muted-foreground capitalize">· {p.category}</span>
+                          <span className="text-xs text-muted-foreground capitalize">{p.category}</span>
                           <span className="text-sm">· ${Number(p.price).toFixed(2)}</span>
                         </div>
                       </div>
@@ -502,6 +509,7 @@ export default function Recommender() {
                 })}
               </div>
             </div>
+
 
             <div className="bg-card p-6 rounded-3xl">
               <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.3em]">
