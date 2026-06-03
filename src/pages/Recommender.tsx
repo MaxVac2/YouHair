@@ -350,7 +350,7 @@ export default function Recommender() {
 
       for (let i = 0; i < routine.products.length; i++) {
         const p = routine.products[i];
-        const step = stepFor(p as Product);
+        const step = routine.steps[i] ?? stepFor(p as Product);
         if (y > pageH - 100) { pdf.addPage(); y = margin; }
 
         // image box
