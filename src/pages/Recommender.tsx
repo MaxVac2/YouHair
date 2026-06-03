@@ -17,7 +17,7 @@ const TEXTURES = ["fine", "medium", "coarse"];
 const THICKNESS = ["thin", "medium", "thick"];
 const DENSITY = ["low", "medium", "high"];
 const SCALP = ["oily", "balanced", "dry"];
-const HAIR_COLORS = ["black", "brown", "blonde", "red", "ranger"];
+const HAIR_COLORS = ["black", "brown", "blonde", "ranger"];
 const CONCERNS = ["oily", "dry", "dandruff", "frizz", "damage", "color-treated", "scalp", "volume"];
 
 const STEP_COPY: Record<string, { title: string; description: string }> = {
