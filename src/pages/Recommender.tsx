@@ -81,7 +81,9 @@ interface RoutineStep {
   product_id: string;
   title: string;
   description: string;
+  justification?: string;
 }
+
 
 interface SnapshotRoutine {
   inputs: {
@@ -243,8 +245,9 @@ export default function Recommender() {
         const found = aiSteps.find((s) => s.product_id === p.id);
         if (found) return found;
         const fallback = stepFor(p as Product);
-        return { product_id: p.id, title: fallback.title, description: fallback.description };
+        return { product_id: p.id, title: fallback.title, description: fallback.description, justification: "" };
       });
+
 
       const finalSnapshot: SnapshotRoutine = {
         inputs: { hairType, texture, thickness, density, scalpType, hairColor, concerns: [...concerns] },
@@ -350,8 +353,8 @@ export default function Recommender() {
 
       for (let i = 0; i < routine.products.length; i++) {
         const p = routine.products[i];
-        const step = routine.steps[i] ?? stepFor(p as Product);
-        if (y > pageH - 100) { pdf.addPage(); y = margin; }
+        const step = routine.steps[i] ?? { ...stepFor(p as Product), justification: "" };
+        if (y > pageH - 140) { pdf.addPage(); y = margin; }
 
         // image box
         const imgSize = 60;
@@ -361,19 +364,34 @@ export default function Recommender() {
             try { pdf.addImage(dataUrl, "JPEG", margin, y, imgSize, imgSize); } catch { /* ignore */ }
           }
         }
+        const textX = margin + imgSize + 14;
+        const textW = pageW - margin * 2 - imgSize - 14;
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(12);
-        pdf.text(`${i + 1}. ${step.title}`, margin + imgSize + 14, y + 16);
+        pdf.text(`${i + 1}. ${p.name}`, textX, y + 14);
         pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(120, 120, 120);
+        if (step.title) pdf.text(step.title.toUpperCase(), textX, y + 26);
         pdf.setFontSize(10);
-        pdf.setTextColor(80, 80, 80);
-        const descLines = pdf.splitTextToSize(step.description, pageW - margin * 2 - imgSize - 14);
-        pdf.text(descLines, margin + imgSize + 14, y + 32);
+        pdf.setTextColor(60, 60, 60);
+        const descLines = pdf.splitTextToSize(step.description, textW);
+        pdf.text(descLines, textX, y + 40);
+        let lineY = y + 40 + descLines.length * 12;
+        if ((step as RoutineStep).justification) {
+          pdf.setFont("helvetica", "italic");
+          pdf.setTextColor(190, 50, 110);
+          const jLines = pdf.splitTextToSize(`Why this for you: ${(step as RoutineStep).justification}`, textW);
+          pdf.text(jLines, textX, lineY + 4);
+          lineY += jLines.length * 12 + 4;
+          pdf.setFont("helvetica", "normal");
+        }
         pdf.setTextColor(15, 23, 42);
         pdf.setFontSize(10);
-        pdf.text(`${p.name} — $${Number(p.price).toFixed(2)}`, margin + imgSize + 14, y + 56);
-        y += imgSize + 18;
+        pdf.text(`$${Number(p.price).toFixed(2)}`, textX, lineY + 8);
+        y = Math.max(y + imgSize + 18, lineY + 22);
       }
+
 
       pdf.save("lushlocks-routine.pdf");
     } catch (err) {
@@ -473,7 +491,7 @@ export default function Recommender() {
 
               <div className="grid gap-3">
                 {routine.products.map((p, i) => {
-                  const step = routine.steps[i] ?? { title: "", description: "" };
+                  const step = routine.steps[i] ?? { title: "", description: "", justification: "" };
                   return (
                     <div key={p.id} className="flex items-start gap-4 bg-muted/50 rounded-2xl p-4">
                       <div className="w-9 h-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
@@ -483,11 +501,18 @@ export default function Recommender() {
                         {p.image_url && <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" loading="lazy" />}
                       </Link>
                       <div className="flex-1 min-w-0">
-                        <p className="font-display font-semibold">{step.title}</p>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <Link to={`/shop/${p.slug}`} className="font-display font-semibold hover:text-primary transition-colors">{p.name}</Link>
+                          {step.title && <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">· {step.title}</span>}
+                        </div>
                         <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+                        {step.justification && (
+                          <p className="text-sm mt-2 text-foreground/80 bg-primary/5 border border-primary/15 rounded-xl px-3 py-2">
+                            <span className="font-medium text-primary">Why this for you: </span>{step.justification}
+                          </p>
+                        )}
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <Link to={`/shop/${p.slug}`} className="text-sm font-medium hover:text-primary transition-colors">{p.name}</Link>
-                          <span className="text-xs text-muted-foreground capitalize">· {p.category}</span>
+                          <span className="text-xs text-muted-foreground capitalize">{p.category}</span>
                           <span className="text-sm">· ${Number(p.price).toFixed(2)}</span>
                         </div>
                       </div>
@@ -499,6 +524,7 @@ export default function Recommender() {
                 })}
               </div>
             </div>
+
 
             <div className="bg-card p-6 rounded-3xl">
               <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.3em]">

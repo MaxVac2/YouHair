@@ -78,10 +78,11 @@ serve(async (req) => {
                     type: "object",
                     properties: {
                       product_id: { type: "string", description: "The id of the product this step uses" },
-                      title: { type: "string", description: "Short action title, e.g. 'Cleanse', 'Define curls'" },
-                      description: { type: "string", description: "1-2 sentence personalised instruction tailored to the user's attributes" },
+                      title: { type: "string", description: "Short action verb for this step, e.g. 'Cleanse', 'Define', 'Hold'" },
+                      description: { type: "string", description: "1-2 sentence personalised application instruction tailored to the user's attributes" },
+                      justification: { type: "string", description: "One concise sentence explaining WHY this specific product suits this user, naming the exact hair attribute or concern it addresses (e.g. 'Leave-In Conditioner targets your frizz and dry scalp by sealing the cuticle.')" },
                     },
-                    required: ["product_id", "title", "description"],
+                    required: ["product_id", "title", "description", "justification"],
                     additionalProperties: false,
                   },
                 },
@@ -97,8 +98,9 @@ serve(async (req) => {
         {
           role: "system",
           content:
-            "You are a senior men's hairstylist building personalised haircare routines. Every step must reference the exact product the user owns and tailor the instructions to their hair attributes. Keep descriptions concrete, warm, and under 30 words.",
+            "You are a senior men's hairstylist building personalised haircare routines. Every step must reference the exact product the user owns and tailor the instructions to their hair attributes. For each step also write a justification that names the product and explicitly ties it to one of the user's specific attributes or concerns (e.g. frizz, oily scalp, fine thickness). Keep descriptions and justifications concrete, warm, and under 30 words.",
         },
+
         {
           role: "user",
           content: `Build a step-by-step routine for a man with these attributes: ${attrStr}.\n\nUse these matched products IN ORDER (one step each):\n${productLines}\n\nInclude the product id verbatim for each step.`,
