@@ -77,6 +77,12 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
+interface RoutineStep {
+  product_id: string;
+  title: string;
+  description: string;
+}
+
 interface SnapshotRoutine {
   inputs: {
     hairType: string;
@@ -88,6 +94,7 @@ interface SnapshotRoutine {
     concerns: string[];
   };
   products: Pick<Product, "id" | "name" | "slug" | "price" | "image_url" | "category">[];
+  steps: RoutineStep[];
   haircut: { title: string; detail: string };
   haircutImage: string | null;
 }
