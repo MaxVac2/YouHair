@@ -245,8 +245,9 @@ export default function Recommender() {
         const found = aiSteps.find((s) => s.product_id === p.id);
         if (found) return found;
         const fallback = stepFor(p as Product);
-        return { product_id: p.id, title: fallback.title, description: fallback.description };
+        return { product_id: p.id, title: fallback.title, description: fallback.description, justification: "" };
       });
+
 
       const finalSnapshot: SnapshotRoutine = {
         inputs: { hairType, texture, thickness, density, scalpType, hairColor, concerns: [...concerns] },
