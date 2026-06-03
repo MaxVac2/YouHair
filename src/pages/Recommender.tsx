@@ -81,7 +81,9 @@ interface RoutineStep {
   product_id: string;
   title: string;
   description: string;
+  justification?: string;
 }
+
 
 interface SnapshotRoutine {
   inputs: {
