@@ -449,7 +449,15 @@ export default function Recommender() {
           )}
         </div>
 
-        {routine && (
+        {routine && routine.inputs.hairColor === "ranger" && (
+          <div className="mt-8 bg-card p-10 rounded-3xl border-4 border-primary text-center">
+            <h2 className="font-display text-4xl sm:text-5xl font-extrabold tracking-[-0.02em] text-primary">
+              GET CHEMOTHERAPY
+            </h2>
+          </div>
+        )}
+
+        {routine && routine.inputs.hairColor !== "ranger" && (
           <div className="mt-8 space-y-6">
             <div className="bg-card p-6 rounded-3xl space-y-5">
               <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -465,7 +473,7 @@ export default function Recommender() {
 
               <div className="grid gap-3">
                 {routine.products.map((p, i) => {
-                  const step = stepFor(p as Product);
+                  const step = routine.steps[i] ?? { title: "", description: "" };
                   return (
                     <div key={p.id} className="flex items-start gap-4 bg-muted/50 rounded-2xl p-4">
                       <div className="w-9 h-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
