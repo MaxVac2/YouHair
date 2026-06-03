@@ -353,8 +353,8 @@ export default function Recommender() {
 
       for (let i = 0; i < routine.products.length; i++) {
         const p = routine.products[i];
-        const step = routine.steps[i] ?? stepFor(p as Product);
-        if (y > pageH - 100) { pdf.addPage(); y = margin; }
+        const step = routine.steps[i] ?? { ...stepFor(p as Product), justification: "" };
+        if (y > pageH - 140) { pdf.addPage(); y = margin; }
 
         // image box
         const imgSize = 60;
@@ -364,19 +364,34 @@ export default function Recommender() {
             try { pdf.addImage(dataUrl, "JPEG", margin, y, imgSize, imgSize); } catch { /* ignore */ }
           }
         }
+        const textX = margin + imgSize + 14;
+        const textW = pageW - margin * 2 - imgSize - 14;
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(12);
-        pdf.text(`${i + 1}. ${step.title}`, margin + imgSize + 14, y + 16);
+        pdf.text(`${i + 1}. ${p.name}`, textX, y + 14);
         pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(9);
+        pdf.setTextColor(120, 120, 120);
+        if (step.title) pdf.text(step.title.toUpperCase(), textX, y + 26);
         pdf.setFontSize(10);
-        pdf.setTextColor(80, 80, 80);
-        const descLines = pdf.splitTextToSize(step.description, pageW - margin * 2 - imgSize - 14);
-        pdf.text(descLines, margin + imgSize + 14, y + 32);
+        pdf.setTextColor(60, 60, 60);
+        const descLines = pdf.splitTextToSize(step.description, textW);
+        pdf.text(descLines, textX, y + 40);
+        let lineY = y + 40 + descLines.length * 12;
+        if ((step as RoutineStep).justification) {
+          pdf.setFont("helvetica", "italic");
+          pdf.setTextColor(190, 50, 110);
+          const jLines = pdf.splitTextToSize(`Why this for you: ${(step as RoutineStep).justification}`, textW);
+          pdf.text(jLines, textX, lineY + 4);
+          lineY += jLines.length * 12 + 4;
+          pdf.setFont("helvetica", "normal");
+        }
         pdf.setTextColor(15, 23, 42);
         pdf.setFontSize(10);
-        pdf.text(`${p.name} — $${Number(p.price).toFixed(2)}`, margin + imgSize + 14, y + 56);
-        y += imgSize + 18;
+        pdf.text(`$${Number(p.price).toFixed(2)}`, textX, lineY + 8);
+        y = Math.max(y + imgSize + 18, lineY + 22);
       }
+
 
       pdf.save("lushlocks-routine.pdf");
     } catch (err) {
