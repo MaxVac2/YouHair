@@ -279,7 +279,9 @@ export default function Recommender() {
         steps: orderedSteps,
         haircut,
         haircutImage: data?.imageUrl ?? null,
+        tryonImage: null,
       };
+
       setRoutine(finalSnapshot);
 
       if (user) {
