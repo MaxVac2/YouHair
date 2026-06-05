@@ -137,6 +137,8 @@ export default function Recommender() {
   const [loadingTip, setLoadingTip] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [routine, setRoutine] = useState<SnapshotRoutine | null>(null);
+  const [tryingOn, setTryingOn] = useState(false);
+  const tryonInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (existing) {
@@ -147,10 +149,29 @@ export default function Recommender() {
       setScalpType(existing.scalp_type ?? "");
       setHairColor(existing.hair_color ?? "");
       setConcerns(existing.concerns ?? []);
-      const saved = (existing as any).saved_routine as SnapshotRoutine | null;
-      if (saved && saved.products?.length) setRoutine(saved);
+      const saved = (existing as any).saved_routine as Partial<SnapshotRoutine> | null;
+      if (saved && saved.products?.length) {
+        // Normalize older snapshots so missing fields don't crash render
+        setRoutine({
+          inputs: saved.inputs ?? {
+            hairType: existing.hair_type ?? "",
+            texture: existing.texture ?? "",
+            thickness: existing.thickness ?? "",
+            density: existing.density ?? "",
+            scalpType: existing.scalp_type ?? "",
+            hairColor: existing.hair_color ?? "",
+            concerns: existing.concerns ?? [],
+          },
+          products: saved.products,
+          steps: saved.steps ?? [],
+          haircut: saved.haircut ?? { title: "", detail: "" },
+          haircutImage: saved.haircutImage ?? null,
+          tryonImage: saved.tryonImage ?? null,
+        });
+      }
     }
   }, [existing]);
+
 
   const toggleConcern = (c: string) =>
     setConcerns((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
