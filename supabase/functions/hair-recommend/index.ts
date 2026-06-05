@@ -137,7 +137,7 @@ serve(async (req) => {
     // === IMAGE GENERATION ===
     const imagePromise = (async () => {
       if (!haircutTitle) return null;
-      const prompt = `Professional studio portrait photograph of a MAN with a "${haircutTitle}" men's hairstyle. ${haircutDetail ?? ""}. Show the man's hair and face clearly. Attributes: ${attrStr}. Clean neutral light-gray background, soft professional barbershop/salon lighting, sharp focus on the hair, front and slight 3/4 angle, magazine editorial quality. Masculine men's haircut only. No text, no watermark, no logos.`;
+      const prompt = `Professional studio portrait photograph of a MAN with a currently trending, in-style men's "${haircutTitle}" haircut (think modern barbershop / GQ / 2024-2025 trending — e.g. textured crops, mid fades, curtain bangs, broccoli cut, burst fade, never outdated or dorky styles). ${haircutDetail ?? ""}. Show the man's hair and face clearly. Attributes: ${attrStr}. Clean neutral light-gray background, soft professional salon lighting, sharp focus on the hair, front and slight 3/4 angle, magazine editorial quality. Masculine, stylish, fashion-forward men's haircut only. No text, no watermark, no logos.`;
 
       const imgRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
