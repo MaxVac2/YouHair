@@ -100,7 +100,9 @@ interface SnapshotRoutine {
   steps: RoutineStep[];
   haircut: { title: string; detail: string };
   haircutImage: string | null;
+  tryonImage?: string | null;
 }
+
 
 async function urlToDataUrl(url: string): Promise<string | null> {
   try {
