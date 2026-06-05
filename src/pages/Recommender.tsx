@@ -310,6 +310,80 @@ export default function Recommender() {
     toast.success(`${p.name} added to bag`);
   };
 
+  const resizeToDataUrl = (file: File, maxDim = 768): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Couldn't read image"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Couldn't decode image"));
+        img.onload = () => {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return reject(new Error("Canvas not supported"));
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const handleTryOnFile = async (file: File | null) => {
+    if (!file || !routine) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please pick an image file.");
+      return;
+    }
+    setTryingOn(true);
+    try {
+      const dataUrl = await resizeToDataUrl(file);
+      const { data, error } = await supabase.functions.invoke("haircut-tryon", {
+        body: {
+          faceImage: dataUrl,
+          haircutTitle: routine.haircut.title,
+          haircutDetail: routine.haircut.detail,
+          hairColor: routine.inputs.hairColor,
+          hairType: routine.inputs.hairType,
+        },
+      });
+      if (error) throw error;
+      const url: string | null = data?.imageUrl ?? null;
+      if (!url) throw new Error("No image returned");
+
+      const updated: SnapshotRoutine = { ...routine, tryonImage: url };
+      setRoutine(updated);
+      if (user) {
+        try {
+          await saveProfile.mutateAsync({
+            hair_type: routine.inputs.hairType || null,
+            hair_color: routine.inputs.hairColor || null,
+            texture: routine.inputs.texture || null,
+            thickness: routine.inputs.thickness || null,
+            density: routine.inputs.density || null,
+            scalp_type: routine.inputs.scalpType || null,
+            concerns: routine.inputs.concerns,
+            // @ts-ignore
+            saved_routine: updated,
+          });
+        } catch (e) { console.error(e); }
+      }
+      toast.success("Try-on ready!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't generate your try-on photo.");
+    } finally {
+      setTryingOn(false);
+      if (tryonInputRef.current) tryonInputRef.current.value = "";
+    }
+  };
+
+
   const handleExportPoster = async () => {
     if (!routine) return;
     setExporting(true);
