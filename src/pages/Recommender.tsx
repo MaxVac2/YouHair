@@ -491,7 +491,7 @@ export default function Recommender() {
 
               <div className="grid gap-3">
                 {routine.products.map((p, i) => {
-                  const step = routine.steps[i] ?? { title: "", description: "", justification: "" };
+                  const step = (routine.steps ?? [])[i] ?? { title: "", description: "", justification: "" };
                   return (
                     <div key={p.id} className="flex items-start gap-4 bg-muted/50 rounded-2xl p-4">
                       <div className="w-9 h-9 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-semibold">
