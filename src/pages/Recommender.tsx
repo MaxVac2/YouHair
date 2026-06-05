@@ -773,6 +773,55 @@ export default function Recommender() {
                 </div>
               </div>
             </div>
+
+            {/* AI try-on */}
+            <div className="bg-card p-6 rounded-3xl">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.3em]">
+                <Camera className="w-4 h-4 text-primary" /> Try it on your face
+              </div>
+              <div className="grid sm:grid-cols-[1fr_220px] gap-5 mt-3 items-start">
+                <div>
+                  <h3 className="font-display text-xl font-bold">See yourself with this haircut</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Upload a clear, front-facing photo of your face. We'll generate a portrait of you wearing the{" "}
+                    <span className="font-medium text-foreground">{routine.haircut.title}</span>. Your photo is sent only to generate this image.
+                  </p>
+                  <input
+                    ref={tryonInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleTryOnFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      className="rounded-full bg-foreground text-background hover:bg-foreground/90"
+                      onClick={() => tryonInputRef.current?.click()}
+                      disabled={tryingOn}
+                    >
+                      {tryingOn ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating…</>
+                      ) : routine.tryonImage ? (
+                        <><Camera className="w-4 h-4 mr-2" /> Try another photo</>
+                      ) : (
+                        <><Camera className="w-4 h-4 mr-2" /> Upload photo</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="aspect-square w-full rounded-2xl overflow-hidden bg-muted relative">
+                  {routine.tryonImage ? (
+                    <img src={routine.tryonImage} alt="You with the suggested haircut" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground text-center px-3">
+                      {tryingOn ? "Generating your try-on…" : "Your try-on photo will appear here"}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
       </div>
