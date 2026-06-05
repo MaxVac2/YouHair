@@ -56,10 +56,12 @@ export default function Account() {
                 products: { id: string; name: string; slug: string; price: number; image_url: string | null; category: string }[];
                 haircut: { title: string; detail: string };
                 haircutImage: string | null;
+                tryonImage?: string | null;
               }
             | null
             | undefined;
           if (!saved || !saved.products?.length) return null;
+
           return (
             <section className="bg-card p-6 rounded-3xl">
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
@@ -80,6 +82,19 @@ export default function Account() {
                   </div>
                 )}
               </div>
+              {saved.tryonImage && (
+                <div className="mb-5 rounded-3xl overflow-hidden bg-muted/50 p-4 grid sm:grid-cols-[1fr_180px] gap-4 items-center">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-primary">Your AI try-on</p>
+                    <p className="font-display font-semibold mt-1">You with the {saved.haircut?.title}</p>
+                    <p className="text-sm text-muted-foreground mt-1">Generated from a photo you uploaded.</p>
+                  </div>
+                  <div className="aspect-square w-full rounded-2xl overflow-hidden bg-muted">
+                    <img src={saved.tryonImage} alt="You with the suggested haircut" className="w-full h-full object-cover" />
+                  </div>
+                </div>
+              )}
+
               <ol className="space-y-2">
                 {saved.products.map((p, i) => (
                   <li key={p.id} className="flex items-center gap-3 bg-muted/50 rounded-2xl p-3">

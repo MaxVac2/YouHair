@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Download, Scissors, Sparkles, Plus } from "lucide-react";
+import { Download, Scissors, Sparkles, Plus, Camera, Loader2 } from "lucide-react";
 import { jsPDF } from "jspdf";
 
 const HAIR_TYPES = ["straight", "wavy", "curly", "coily"];
@@ -47,21 +47,22 @@ function stepFor(product: Product) {
 
 function pickHaircut(hairType: string, hairColor: string) {
   if (hairColor === "ranger") {
-    return { title: "Bold textured crop", detail: "Choppy short layers on top with faded sides — built to show off statement color." };
+    return { title: "Statement textured crop", detail: "Choppy short layers on top with a skin fade — designed to show off bold fashion color." };
   }
   switch (hairType) {
     case "straight":
-      return { title: "Classic side part", detail: "Sharp, tapered sides with a clean part — sleek and timeless on straight hair." };
+      return { title: "Mid-length curtain cut", detail: "Soft middle-parted curtains falling to the brows with a tapered back — one of the most in-style cuts right now on straight hair." };
     case "wavy":
-      return { title: "Textured fringe", detail: "Soft messy top with a forward-falling fringe — leans into natural waves." };
+      return { title: "Modern broccoli crop", detail: "Voluminous textured top with a mid fade — currently trending for wavy hair, plays up natural movement." };
     case "curly":
-      return { title: "Curly top fade", detail: "Mid fade with length on top so curls have room to spring." };
+      return { title: "Curly mid-fade with curtain bangs", detail: "Length kept on top so curls drop into a soft fringe, with a sharp mid fade on the sides." };
     case "coily":
-      return { title: "Tapered shape-up", detail: "Crisp shape-up with a low taper — maintains height on top with neat edges." };
+      return { title: "Burst fade with sponge twists", detail: "Twisted top texture with a clean burst fade around the ears — fresh, sharp, very on-trend." };
     default:
-      return { title: "Modern crop", detail: "Short, textured, and versatile — works with most hair types." };
+      return { title: "Textured mid-fade crop", detail: "Short textured top with a mid fade — the go-to modern men's cut, works on almost any hair type." };
   }
 }
+
 
 function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -99,7 +100,9 @@ interface SnapshotRoutine {
   steps: RoutineStep[];
   haircut: { title: string; detail: string };
   haircutImage: string | null;
+  tryonImage?: string | null;
 }
+
 
 async function urlToDataUrl(url: string): Promise<string | null> {
   try {
@@ -134,6 +137,8 @@ export default function Recommender() {
   const [loadingTip, setLoadingTip] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [routine, setRoutine] = useState<SnapshotRoutine | null>(null);
+  const [tryingOn, setTryingOn] = useState(false);
+  const tryonInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (existing) {
@@ -144,10 +149,29 @@ export default function Recommender() {
       setScalpType(existing.scalp_type ?? "");
       setHairColor(existing.hair_color ?? "");
       setConcerns(existing.concerns ?? []);
-      const saved = (existing as any).saved_routine as SnapshotRoutine | null;
-      if (saved && saved.products?.length) setRoutine(saved);
+      const saved = (existing as any).saved_routine as Partial<SnapshotRoutine> | null;
+      if (saved && saved.products?.length) {
+        // Normalize older snapshots so missing fields don't crash render
+        setRoutine({
+          inputs: saved.inputs ?? {
+            hairType: existing.hair_type ?? "",
+            texture: existing.texture ?? "",
+            thickness: existing.thickness ?? "",
+            density: existing.density ?? "",
+            scalpType: existing.scalp_type ?? "",
+            hairColor: existing.hair_color ?? "",
+            concerns: existing.concerns ?? [],
+          },
+          products: saved.products,
+          steps: saved.steps ?? [],
+          haircut: saved.haircut ?? { title: "", detail: "" },
+          haircutImage: saved.haircutImage ?? null,
+          tryonImage: saved.tryonImage ?? null,
+        });
+      }
     }
   }, [existing]);
+
 
   const toggleConcern = (c: string) =>
     setConcerns((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
@@ -255,7 +279,9 @@ export default function Recommender() {
         steps: orderedSteps,
         haircut,
         haircutImage: data?.imageUrl ?? null,
+        tryonImage: null,
       };
+
       setRoutine(finalSnapshot);
 
       if (user) {
@@ -286,6 +312,80 @@ export default function Recommender() {
     toast.success(`${p.name} added to bag`);
   };
 
+  const resizeToDataUrl = (file: File, maxDim = 768): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Couldn't read image"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("Couldn't decode image"));
+        img.onload = () => {
+          const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return reject(new Error("Canvas not supported"));
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const handleTryOnFile = async (file: File | null) => {
+    if (!file || !routine) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please pick an image file.");
+      return;
+    }
+    setTryingOn(true);
+    try {
+      const dataUrl = await resizeToDataUrl(file);
+      const { data, error } = await supabase.functions.invoke("haircut-tryon", {
+        body: {
+          faceImage: dataUrl,
+          haircutTitle: routine.haircut.title,
+          haircutDetail: routine.haircut.detail,
+          hairColor: routine.inputs.hairColor,
+          hairType: routine.inputs.hairType,
+        },
+      });
+      if (error) throw error;
+      const url: string | null = data?.imageUrl ?? null;
+      if (!url) throw new Error("No image returned");
+
+      const updated: SnapshotRoutine = { ...routine, tryonImage: url };
+      setRoutine(updated);
+      if (user) {
+        try {
+          await saveProfile.mutateAsync({
+            hair_type: routine.inputs.hairType || null,
+            hair_color: routine.inputs.hairColor || null,
+            texture: routine.inputs.texture || null,
+            thickness: routine.inputs.thickness || null,
+            density: routine.inputs.density || null,
+            scalp_type: routine.inputs.scalpType || null,
+            concerns: routine.inputs.concerns,
+            // @ts-ignore
+            saved_routine: updated,
+          });
+        } catch (e) { console.error(e); }
+      }
+      toast.success("Try-on ready!");
+    } catch (err) {
+      console.error(err);
+      toast.error("Couldn't generate your try-on photo.");
+    } finally {
+      setTryingOn(false);
+      if (tryonInputRef.current) tryonInputRef.current.value = "";
+    }
+  };
+
+
   const handleExportPoster = async () => {
     if (!routine) return;
     setExporting(true);
@@ -295,103 +395,224 @@ export default function Recommender() {
       const pageH = pdf.internal.pageSize.getHeight();
       const margin = 40;
 
-      // Header
-      pdf.setFillColor(15, 23, 42);
-      pdf.rect(0, 0, pageW, 110, "F");
-      pdf.setTextColor(255, 255, 255);
+      // ---------- brand palette ----------
+      const ink: [number, number, number] = [15, 23, 42];
+      const muted: [number, number, number] = [110, 116, 132];
+      const soft: [number, number, number] = [243, 244, 246];
+      const rose: [number, number, number] = [225, 56, 119]; // ~ primary
+      const roseSoft: [number, number, number] = [253, 232, 240];
+
+      const setFill = (c: [number, number, number]) => pdf.setFillColor(c[0], c[1], c[2]);
+      const setText = (c: [number, number, number]) => pdf.setTextColor(c[0], c[1], c[2]);
+      const setDraw = (c: [number, number, number]) => pdf.setDrawColor(c[0], c[1], c[2]);
+
+      const ensureSpace = (needed: number) => {
+        if (y + needed > pageH - 60) { pdf.addPage(); y = margin; drawFooter(); }
+      };
+
+      const drawFooter = () => {
+        setText(muted);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.text("lushlocks · personalised hair plan", margin, pageH - 24);
+        pdf.text(`${pdf.getCurrentPageInfo().pageNumber}`, pageW - margin, pageH - 24, { align: "right" });
+      };
+
+      // ---------- cover header ----------
+      setFill(ink);
+      pdf.rect(0, 0, pageW, 150, "F");
+      // rose accent stripe
+      setFill(rose);
+      pdf.rect(0, 150, pageW, 4, "F");
+
+      setText([255, 255, 255]);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(22);
-      pdf.text("lushlocks routine", margin, 50);
+      pdf.setFontSize(10);
+      pdf.text("LUSHLOCKS", margin, 50);
+      pdf.setFontSize(28);
+      pdf.text("Your hair plan", margin, 86);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(11);
       const { inputs } = routine;
-      const meta = [
+      pdf.text(`Built for your ${inputs.hairType || "personal"} hair · generated by AI`, margin, 108);
+
+      // profile chips
+      const chips = [
         inputs.hairType && `${inputs.hairType} hair`,
-        inputs.texture && `${inputs.texture} texture`,
-        inputs.hairColor && `${inputs.hairColor} color`,
+        inputs.texture && `${inputs.texture} strands`,
+        inputs.hairColor && `${inputs.hairColor}`,
         inputs.thickness && `${inputs.thickness} thickness`,
         inputs.density && `${inputs.density} density`,
         inputs.scalpType && `${inputs.scalpType} scalp`,
-        inputs.concerns.length ? `concerns: ${inputs.concerns.join(", ")}` : null,
-      ]
-        .filter(Boolean)
-        .join(" • ");
-      pdf.text(pdf.splitTextToSize(meta, pageW - margin * 2), margin, 78);
+        ...inputs.concerns.map((c) => c),
+      ].filter(Boolean) as string[];
 
-      pdf.setTextColor(15, 23, 42);
-      let y = 140;
-
-      // Haircut suggestion
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(16);
-      pdf.text("Haircut suggestion", margin, y);
-      y += 10;
+      let y = 180;
+      let chipX = margin;
+      pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(12);
-      pdf.text(routine.haircut.title, margin, y + 14);
-      const detailLines = pdf.splitTextToSize(routine.haircut.detail, pageW - margin * 2 - 160);
-      pdf.setFontSize(10);
-      pdf.setTextColor(80, 80, 80);
-      pdf.text(detailLines, margin, y + 32);
-      pdf.setTextColor(15, 23, 42);
+      chips.forEach((label) => {
+        const w = pdf.getTextWidth(label) + 16;
+        if (chipX + w > pageW - margin) { chipX = margin; y += 22; }
+        setFill(soft);
+        pdf.roundedRect(chipX, y - 12, w, 18, 9, 9, "F");
+        setText(ink);
+        pdf.text(label, chipX + 8, y);
+        chipX += w + 6;
+      });
+      y += 26;
+
+      // ---------- haircut card ----------
+      ensureSpace(190);
+      const cardX = margin;
+      const cardY = y;
+      const cardW = pageW - margin * 2;
+      const cardH = 180;
+      setFill(soft);
+      pdf.roundedRect(cardX, cardY, cardW, cardH, 14, 14, "F");
+
+      const imgBox = 150;
+      const imgX = cardX + cardW - imgBox - 14;
+      const imgY = cardY + 14;
 
       if (routine.haircutImage) {
-        const dataUrl = await urlToDataUrl(routine.haircutImage);
-        if (dataUrl) {
-          try {
-            pdf.addImage(dataUrl, "PNG", pageW - margin - 140, y - 4, 140, 140);
-          } catch (e) { console.error(e); }
+        const d = await urlToDataUrl(routine.haircutImage);
+        if (d) {
+          try { pdf.addImage(d, "PNG", imgX, imgY, imgBox, imgBox); } catch (e) { console.error(e); }
         }
+      } else {
+        setFill([220, 222, 230]);
+        pdf.roundedRect(imgX, imgY, imgBox, imgBox, 10, 10, "F");
       }
-      y += 160;
 
-      // Routine steps
+      setText(rose);
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(16);
-      pdf.text(`Your ${routine.products.length}-step routine`, margin, y);
-      y += 18;
+      pdf.setFontSize(8);
+      pdf.text("HAIRCUT SUGGESTION", cardX + 18, cardY + 24);
+      setText(ink);
+      pdf.setFontSize(18);
+      const titleLines = pdf.splitTextToSize(routine.haircut.title || "Your haircut", cardW - imgBox - 50);
+      pdf.text(titleLines, cardX + 18, cardY + 46);
+      setText(muted);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(10);
+      const detailLines = pdf.splitTextToSize(routine.haircut.detail || "", cardW - imgBox - 50);
+      pdf.text(detailLines, cardX + 18, cardY + 46 + titleLines.length * 18 + 6);
+
+      y = cardY + cardH + 24;
+
+      // ---------- try-on card ----------
+      if (routine.tryonImage) {
+        ensureSpace(260);
+        const tCardY = y;
+        const tCardH = 240;
+        setFill(roseSoft);
+        pdf.roundedRect(margin, tCardY, cardW, tCardH, 14, 14, "F");
+        setText(rose);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8);
+        pdf.text("YOU, WITH THE HAIRCUT", margin + 18, tCardY + 24);
+        setText(ink);
+        pdf.setFontSize(14);
+        pdf.text("AI try-on", margin + 18, tCardY + 44);
+        setText(muted);
+        pdf.setFontSize(9);
+        pdf.setFont("helvetica", "normal");
+        const tLines = pdf.splitTextToSize("A look at how this style fits your face. Generated with AI from your photo.", cardW - 230);
+        pdf.text(tLines, margin + 18, tCardY + 60);
+
+        const tImg = 200;
+        const tx = margin + cardW - tImg - 14;
+        const ty = tCardY + (tCardH - tImg) / 2;
+        const d = await urlToDataUrl(routine.tryonImage);
+        if (d) {
+          try { pdf.addImage(d, "PNG", tx, ty, tImg, tImg); } catch (e) { console.error(e); }
+        }
+        y = tCardY + tCardH + 24;
+      }
+
+      // ---------- routine ----------
+      ensureSpace(60);
+      setText(rose);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.text("PERSONALISED ROUTINE", margin, y);
+      setText(ink);
+      pdf.setFontSize(18);
+      pdf.text(`Your ${routine.products.length}-step routine`, margin, y + 22);
+      y += 40;
 
       for (let i = 0; i < routine.products.length; i++) {
         const p = routine.products[i];
         const step = routine.steps[i] ?? { ...stepFor(p as Product), justification: "" };
-        if (y > pageH - 140) { pdf.addPage(); y = margin; }
+        const imgSize = 70;
 
-        // image box
-        const imgSize = 60;
+        // measure block height
+        const textX = margin + imgSize + 20;
+        const textW = pageW - margin * 2 - imgSize - 36;
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(10);
+        const descLines = pdf.splitTextToSize(step.description || "", textW);
+        const justLines = (step as RoutineStep).justification
+          ? pdf.splitTextToSize(`Why this for you — ${(step as RoutineStep).justification}`, textW)
+          : [];
+        const blockH = Math.max(imgSize + 24, 50 + descLines.length * 12 + (justLines.length ? justLines.length * 11 + 10 : 0));
+        ensureSpace(blockH + 12);
+
+        // card bg
+        setFill([252, 252, 253]);
+        setDraw([235, 236, 240]);
+        pdf.roundedRect(margin, y, pageW - margin * 2, blockH, 10, 10, "FD");
+
+        // image
         if (p.image_url) {
-          const dataUrl = await urlToDataUrl(p.image_url);
-          if (dataUrl) {
-            try { pdf.addImage(dataUrl, "JPEG", margin, y, imgSize, imgSize); } catch { /* ignore */ }
+          const d = await urlToDataUrl(p.image_url);
+          if (d) {
+            try { pdf.addImage(d, "JPEG", margin + 12, y + 12, imgSize, imgSize); } catch { /* ignore */ }
           }
         }
-        const textX = margin + imgSize + 14;
-        const textW = pageW - margin * 2 - imgSize - 14;
+
+        // step badge
+        setFill(rose);
+        pdf.circle(margin + 12 + imgSize - 8, y + 12 + 8, 11, "F");
+        setText([255, 255, 255]);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.text(`${i + 1}`, margin + 12 + imgSize - 8, y + 12 + 11, { align: "center" });
+
+        // name + step
+        setText(ink);
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(12);
-        pdf.text(`${i + 1}. ${p.name}`, textX, y + 14);
+        pdf.text(p.name, textX, y + 22);
+        setText(muted);
         pdf.setFont("helvetica", "normal");
-        pdf.setFontSize(9);
-        pdf.setTextColor(120, 120, 120);
-        if (step.title) pdf.text(step.title.toUpperCase(), textX, y + 26);
+        pdf.setFontSize(8);
+        if (step.title) pdf.text(`${step.title.toUpperCase()}  ·  $${Number(p.price).toFixed(2)}`, textX, y + 35);
+        else pdf.text(`$${Number(p.price).toFixed(2)}`, textX, y + 35);
+
+        // description
+        setText([60, 60, 70]);
         pdf.setFontSize(10);
-        pdf.setTextColor(60, 60, 60);
-        const descLines = pdf.splitTextToSize(step.description, textW);
-        pdf.text(descLines, textX, y + 40);
-        let lineY = y + 40 + descLines.length * 12;
-        if ((step as RoutineStep).justification) {
+        pdf.text(descLines, textX, y + 50);
+
+        // justification
+        if (justLines.length) {
+          setText(rose);
           pdf.setFont("helvetica", "italic");
-          pdf.setTextColor(190, 50, 110);
-          const jLines = pdf.splitTextToSize(`Why this for you: ${(step as RoutineStep).justification}`, textW);
-          pdf.text(jLines, textX, lineY + 4);
-          lineY += jLines.length * 12 + 4;
-          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(9);
+          pdf.text(justLines, textX, y + 50 + descLines.length * 12 + 6);
         }
-        pdf.setTextColor(15, 23, 42);
-        pdf.setFontSize(10);
-        pdf.text(`$${Number(p.price).toFixed(2)}`, textX, lineY + 8);
-        y = Math.max(y + imgSize + 18, lineY + 22);
+
+        y += blockH + 10;
       }
 
+      // ---------- footer on every page ----------
+      const total = pdf.getNumberOfPages();
+      for (let i = 1; i <= total; i++) {
+        pdf.setPage(i);
+        drawFooter();
+      }
 
       pdf.save("lushlocks-routine.pdf");
     } catch (err) {
@@ -401,6 +622,7 @@ export default function Recommender() {
       setExporting(false);
     }
   };
+
 
   const inputsChanged = useMemo(() => {
     if (!routine) return false;
@@ -551,6 +773,55 @@ export default function Recommender() {
                 </div>
               </div>
             </div>
+
+            {/* AI try-on */}
+            <div className="bg-card p-6 rounded-3xl">
+              <div className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-[0.3em]">
+                <Camera className="w-4 h-4 text-primary" /> Try it on your face
+              </div>
+              <div className="grid sm:grid-cols-[1fr_220px] gap-5 mt-3 items-start">
+                <div>
+                  <h3 className="font-display text-xl font-bold">See yourself with this haircut</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Upload a clear, front-facing photo of your face. We'll generate a portrait of you wearing the{" "}
+                    <span className="font-medium text-foreground">{routine.haircut.title}</span>. Your photo is sent only to generate this image.
+                  </p>
+                  <input
+                    ref={tryonInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handleTryOnFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      className="rounded-full bg-foreground text-background hover:bg-foreground/90"
+                      onClick={() => tryonInputRef.current?.click()}
+                      disabled={tryingOn}
+                    >
+                      {tryingOn ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating…</>
+                      ) : routine.tryonImage ? (
+                        <><Camera className="w-4 h-4 mr-2" /> Try another photo</>
+                      ) : (
+                        <><Camera className="w-4 h-4 mr-2" /> Upload photo</>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+                <div className="aspect-square w-full rounded-2xl overflow-hidden bg-muted relative">
+                  {routine.tryonImage ? (
+                    <img src={routine.tryonImage} alt="You with the suggested haircut" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground text-center px-3">
+                      {tryingOn ? "Generating your try-on…" : "Your try-on photo will appear here"}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
       </div>
