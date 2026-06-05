@@ -56,10 +56,12 @@ export default function Account() {
                 products: { id: string; name: string; slug: string; price: number; image_url: string | null; category: string }[];
                 haircut: { title: string; detail: string };
                 haircutImage: string | null;
+                tryonImage?: string | null;
               }
             | null
             | undefined;
           if (!saved || !saved.products?.length) return null;
+
           return (
             <section className="bg-card p-6 rounded-3xl">
               <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
