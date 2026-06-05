@@ -47,21 +47,22 @@ function stepFor(product: Product) {
 
 function pickHaircut(hairType: string, hairColor: string) {
   if (hairColor === "ranger") {
-    return { title: "Bold textured crop", detail: "Choppy short layers on top with faded sides — built to show off statement color." };
+    return { title: "Statement textured crop", detail: "Choppy short layers on top with a skin fade — designed to show off bold fashion color." };
   }
   switch (hairType) {
     case "straight":
-      return { title: "Classic side part", detail: "Sharp, tapered sides with a clean part — sleek and timeless on straight hair." };
+      return { title: "Mid-length curtain cut", detail: "Soft middle-parted curtains falling to the brows with a tapered back — one of the most in-style cuts right now on straight hair." };
     case "wavy":
-      return { title: "Textured fringe", detail: "Soft messy top with a forward-falling fringe — leans into natural waves." };
+      return { title: "Modern broccoli crop", detail: "Voluminous textured top with a mid fade — currently trending for wavy hair, plays up natural movement." };
     case "curly":
-      return { title: "Curly top fade", detail: "Mid fade with length on top so curls have room to spring." };
+      return { title: "Curly mid-fade with curtain bangs", detail: "Length kept on top so curls drop into a soft fringe, with a sharp mid fade on the sides." };
     case "coily":
-      return { title: "Tapered shape-up", detail: "Crisp shape-up with a low taper — maintains height on top with neat edges." };
+      return { title: "Burst fade with sponge twists", detail: "Twisted top texture with a clean burst fade around the ears — fresh, sharp, very on-trend." };
     default:
-      return { title: "Modern crop", detail: "Short, textured, and versatile — works with most hair types." };
+      return { title: "Textured mid-fade crop", detail: "Short textured top with a mid fade — the go-to modern men's cut, works on almost any hair type." };
   }
 }
+
 
 function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
