@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Download, Scissors, Sparkles, Plus } from "lucide-react";
+import { Download, Scissors, Sparkles, Plus, Camera, Loader2 } from "lucide-react";
 import { jsPDF } from "jspdf";
 
 const HAIR_TYPES = ["straight", "wavy", "curly", "coily"];
