@@ -187,11 +187,16 @@ export default function Recommender() {
       score += concernOverlap * 2;
       return { p, score };
     });
-    return scored
+    const ranked = scored
       .filter((s) => s.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map((s) => s.p)
-      .slice(0, 5);
+      .sort((a, b) => b.score - a.score);
+    if (ranked.length === 0) return [];
+    // Aim for ~3 products, allow 2–5 depending on how many strongly match.
+    const topScore = ranked[0].score;
+    const strong = ranked.filter((s) => s.score >= Math.max(2, topScore - 1));
+    const target = Math.min(5, Math.max(2, strong.length >= 3 ? 3 : strong.length));
+    const count = Math.min(ranked.length, Math.max(target, Math.min(strong.length, 4)));
+    return ranked.slice(0, Math.min(5, Math.max(2, count))).map((s) => s.p);
   };
 
   const handleGenerate = async () => {
