@@ -1,0 +1,1 @@
+REVOKE SELECT (stock) ON public.products FROM anon, authenticated;
