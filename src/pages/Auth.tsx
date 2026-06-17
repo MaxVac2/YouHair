@@ -50,7 +50,7 @@ const Auth = () => {
         </div>
 
         <div className="bg-card rounded-2xl border border-border shadow-lg p-6">
-          <h1 className="text-xl font-heading text-center mb-1">Welcome to lushlocks</h1>
+          <h1 className="text-xl font-heading text-center mb-1">Welcome to YouHair</h1>
           <p className="text-sm text-muted-foreground text-center mb-6 font-body">
             Sign in or create an account with Google.
           </p>

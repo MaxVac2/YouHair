@@ -414,7 +414,7 @@ export default function Recommender() {
         setText(muted);
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(8);
-        pdf.text("lushlocks · personalised hair plan", margin, pageH - 24);
+        pdf.text("YouHair · personalised hair plan", margin, pageH - 24);
         pdf.text(`${pdf.getCurrentPageInfo().pageNumber}`, pageW - margin, pageH - 24, { align: "right" });
       };
 
@@ -428,7 +428,7 @@ export default function Recommender() {
       setText([255, 255, 255]);
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(10);
-      pdf.text("LUSHLOCKS", margin, 50);
+      pdf.text("YOUHAIR", margin, 50);
       pdf.setFontSize(28);
       pdf.text("Your hair plan", margin, 86);
       pdf.setFont("helvetica", "normal");
@@ -614,7 +614,7 @@ export default function Recommender() {
         drawFooter();
       }
 
-      pdf.save("lushlocks-routine.pdf");
+      pdf.save("youhair-routine.pdf");
     } catch (err) {
       console.error(err);
       toast.error("Couldn't export the poster.");
