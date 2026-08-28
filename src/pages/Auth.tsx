@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, OAUTH_REDIRECT_KEY } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 import { motion } from "framer-motion";
 
@@ -19,9 +19,12 @@ const Auth = () => {
   }, [user, navigate]);
 
   const handleGoogle = async () => {
+    const params = new URLSearchParams(window.location.search);
+    sessionStorage.setItem(OAUTH_REDIRECT_KEY, params.get("redirect") || "/account");
     const { error } = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
     if (error) toast.error(error.message || "Google sign-in failed");
   };
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 relative overflow-hidden">
