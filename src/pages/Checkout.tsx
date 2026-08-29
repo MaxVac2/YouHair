@@ -7,10 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Checkout() {
   const { items, total, clear } = useCart();
   const placeOrder = usePlaceOrder();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
 
@@ -19,7 +21,7 @@ export default function Checkout() {
     if (items.length === 0) return;
     setSubmitting(true);
     try {
-      await placeOrder.mutateAsync(items);
+      if (user) await placeOrder.mutateAsync(items);
       clear();
       toast.success("Order placed! 🎉 (mock checkout — no charge)");
       navigate("/account");
