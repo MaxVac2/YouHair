@@ -19,7 +19,7 @@ export default function Checkout() {
     if (items.length === 0) return;
     setSubmitting(true);
     try {
-      await placeOrder.mutateAsync(items);
+      if (user) await placeOrder.mutateAsync(items);
       clear();
       toast.success("Order placed! 🎉 (mock checkout — no charge)");
       navigate("/account");
