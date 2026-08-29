@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function Checkout() {
   const { items, total, clear } = useCart();
   const placeOrder = usePlaceOrder();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
 
